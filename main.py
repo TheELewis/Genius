@@ -1,9 +1,32 @@
+import nltk
+from nltk.corpus import cmudict
+from nltk.tokenize import word_tokenize, wordpunct_tokenize, sent_tokenize
+
+import pronouncing
 import lyricsgenius
+import random
+import string
 import json
 import os
 import re
 
 TDATA_FN = "training_data\inputs"
+
+def get_random_rhyme(word):
+    rhymes = pronouncing.rhymes(word)
+    return random.choice(rhymes)
+
+
+def extract_rhymes(data):
+    """
+    Given a string of lyrics, tokenize them and return the last word of each line.
+    NOTE: for now we are naively assuming that only the last line contains a rhyme.
+    """
+    cleaned_data = data.translate(str.maketrans('', '', string.punctuation)).split('\n')
+    tokens = [wordpunct_tokenize(word) for word in cleaned_data]
+    last = [ sentence[len(sentence) - 1] for sentence in tokens]
+
+    return last
 
 def get_credentials():
     with open("credentials.json", "r") as read_data:
@@ -17,7 +40,8 @@ def create_lyrics_data(song):
     song_title = re.sub("\s", "_", song.title)
     artist_name = re.sub("\s", "_", song.artist)
     output_filepath = TDATA_FN + "\\" + artist_name + "\\" + song_title + ".txt"
-    lyrics = re.sub("([\(\[]).*?([\)\]])", "", song.lyrics)
+    lyrics = re.sub("-", " ", song.lyrics)
+    lyrics = re.sub("([\(\[]).*?([\)\]])", "", lyrics)
 
     if not os.path.exists(TDATA_FN + "\\" + artist_name):
         os.makedirs(TDATA_FN + "\\" + artist_name)
